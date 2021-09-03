@@ -18,15 +18,6 @@ import undetected_chromedriver.v2 as uc
 def copart():
     draw_banner()
     
-    # chrome_options = Options()
-    # chrome_options.add_argument("--headless")
-    # chrome_options.add_argument("--disable-gpu")
-    # chrome_options.add_argument("--disable-software-rasterizer")
-    # chrome_options.add_argument("-enable-webgl")
-    # chrome_options.add_argument("--no-sandbox")
-    # chrome_options.add_argument("--disable-dev-shm-usage")
-    # driver = webdriver.Chrome(executable_path='chromedriver91.0.4472.101_win32.exe', options=chrome_options)
-    
     options = uc.ChromeOptions()
 
     # setting profile
@@ -68,11 +59,6 @@ def copart():
         pwd_field.clear()
         pwd_field.send_keys(password)
         print("-------------->>> Password pass")
-        
-        # time.sleep(3)
-        # remember_checkbox = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, remember_checkbox_xpath)))
-        # remember_checkbox.click()
-        # print("remember pass")
         
         time.sleep(6)
         sign_in_into_account_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_into_account_btn_xpath)))
@@ -129,8 +115,6 @@ def copart():
             join_bid_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_btn_xpath)))
             driver.execute_script("arguments[0].click();", join_bid_btn)
             print("-------------->>> Join Bid Button pass")
-            
-            
         
         else:
             print()
