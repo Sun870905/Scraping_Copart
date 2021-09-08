@@ -12,6 +12,7 @@ from colorama import Fore
 from datetime import datetime
 import pandas as pd
 import time
+import re
 
 
 
@@ -45,7 +46,9 @@ def copart():
     auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/a"
     join_auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/ul/li[3]/a"
     join_bid_iframe_xpath = "//iframe[@id='iAuction5']"
+    join_bid_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]"
     join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
+    waiting_time_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/later-auction-row/div/div/div[3]/div/div[2]/strong"
     search_btn_xpath = "//div[@class='row vehicle-finder-search']/div/button"
     search_list_xpath = "//div[@id='serverSideDataTable_wrapper']/table/tbody/tr"
     
@@ -54,6 +57,7 @@ def copart():
     auction_ended_xpath = '/html/body/div[2]/root/app-root/div/widget-area/div[2]/div[3]/div/gridster/gridster-item/widget/div/div/div/div[1]'
     
     auction = False
+    auction_result = []
     
     try:
         time.sleep(10)
@@ -73,40 +77,41 @@ def copart():
         sign_in_into_account_btn.click()
         print("-------------->>> Sign in pass")
         
-        time.sleep(20)
-        sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, inventory_xpath)))
-        sales_list.click()
-        print("-------------->>> Inventory pass")
+        # time.sleep(20)
+        # sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, inventory_xpath)))
+        # sales_list.click()
+        # print("-------------->>> Inventory pass")
         
-        time.sleep(5)
-        sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sales_list_xpath)))
-        sales_list.click()
-        print("-------------->>> Sales List pass")
+        # time.sleep(5)
+        # sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sales_list_xpath)))
+        # sales_list.click()
+        # print("-------------->>> Sales List pass")
         
-        time.sleep(5)
-        datetime_array = []
-        rows = WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, "//table[@id='clientSideDataTable']/tbody/tr")))
-        print("-------------->>> Auctions Datetime")
-        for row in rows:
-            try:
-                date_str = row.find_element_by_xpath("./td[6]/a").text
-            except NoSuchElementException:
-                continue
-            time_str = row.find_element_by_xpath("./td[1]").text
-            datetime_str = date_str + " " + time_str
-            print(datetime_str)
+        # time.sleep(5)
+        # datetime_array = []
+        # rows = WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, "//table[@id='clientSideDataTable']/tbody/tr")))
+        # print("-------------->>> Auctions Datetime")
+        # for row in rows:
+        #     try:
+        #         date_str = row.find_element_by_xpath("./td[6]/a").text
+        #     except NoSuchElementException:
+        #         continue
+        #     time_str = row.find_element_by_xpath("./td[1]").text
+        #     datetime_str = date_str + " " + time_str
+        #     print(datetime_str)
             
-            if date_str == "LIVE NOW":
-                auction = True
-            elif len(datetime_array) == 0:
-                datetime_array.append(datetime_str)
-            elif datetime_str != datetime_array[-1]:
-                datetime_array.append(datetime_str)
-        print("-------------->>> Main Auctions Datetime")
-        print(datetime_array)
+        #     if date_str == "LIVE NOW":
+        #         auction = True
+        #     elif len(datetime_array) == 0:
+        #         datetime_array.append(datetime_str)
+        #     elif datetime_str != datetime_array[-1]:
+        #         datetime_array.append(datetime_str)
+        # print("-------------->>> Main Auctions Datetime")
+        # print(datetime_array)
         
-        if auction:
-            time.sleep(5)
+        # if auction:
+        time.sleep(20)
+        while True:
             auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, auctions_xpath)))
             auctions.click()
             print("-------------->>> Auctions pass")
@@ -119,67 +124,88 @@ def copart():
             join_bid_iframe = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_iframe_xpath)))
             driver.switch_to.frame(join_bid_iframe)
             
-            time.sleep(10)
-            join_bid_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_btn_xpath)))
+            time.sleep(15)
+            join_bid = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_xpath))).text
+            if "No Live Auctions" in join_bid:
+                waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_xpath))).text
+                nums = [int(s) for s in re.findall(r'\b\d+\b', waiting_time)]
+                seconds = nums[0] * 3600 + nums[1] * 60
+                print(f"-------------->>> Auction hasn't started yet. Sleeping for {seconds}seconds")
+                time.sleep(seconds)
+            
+            print('-------------->>> Joining bid')
+            time.sleep(2)
+            try:
+                join_bid_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_btn_xpath)))
+            except NoSuchElementException:
+                print("-------------->>> Join bid button doesn't exist")
+            print('Join bid clicking')
             driver.execute_script("arguments[0].click();", join_bid_btn)
             print("-------------->>> Join Bid Button pass")
             
-            auction_result = []
+            
             data = ''
             vin_change = ''
             while 1:
+                print('svg start')
                 try:
                     svg = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, svg_xpath)))
+                    print('svg ok')
                 except NoSuchElementException:
                     print('No svg')
                     break
+                print('svg text getting')
                 svg_txt = svg.text
                 try:
+                    print('vin start')
                     vin = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, vin_xpath)))
+                    print('vin ok')
                 except NoSuchElementException:
                     print('No vin')
                     break
+                print('vin click')
                 vin.click()
                 vin_txt = vin.text
                 print(vin_txt+" : "+svg_txt)
                 
                 if vin_change == '':
+                    print('vin change is no')
                     vin_change = vin_txt
                 elif vin_change == vin_txt:
+                    print('vin change is the same')
                     data = svg_txt
                 elif vin_change != vin_txt:
+                    print('vin change is not the same')
                     auction_result.append({'vin': vin_change, 'auction': data})
                     vin_change = vin_txt
                     print(auction_result)
-            
+            print('auction is end')
             time.sleep(3)
-            auctin_ended = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, auction_ended_xpath))).text
+        # else:
+        #     print("-------------->>> Auction hasn't started yet")
+        #     try:
+        #         rows[0].find_element_by_xpath("./td[6]/a").click()
+        #     except:
+        #         print('No auctions')
+        #     search_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, search_btn_xpath)))
+        #     driver.execute_script("arguments[0].click();", search_btn)
+        #     print("-------------->>> Search Button pass")
             
-        else:
-            print("-------------->>> Auction hasn't started yet")
-            try:
-                rows[0].find_element_by_xpath("./td[6]/a").click()
-            except:
-                print('No auctions')
-            search_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, search_btn_xpath)))
-            driver.execute_script("arguments[0].click();", search_btn)
-            print("-------------->>> Search Button pass")
-            
-            time.sleep(6)
-            searched_datetime_array = []
-            search_list = WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, search_list_xpath)))
-            print("-------------->>> Searched Datetime")
-            for row in search_list:
-                datetime_str = row.find_element_by_xpath("./td[9]/span").text
-                datetime_str = datetime_str.split('\n')[0] + ' ' + datetime_str.split('\n')[1]
-                standard_time = datetime.strptime(datetime_str, "%m/%d/%Y %I:%M %p %Z")
-                print(standard_time)
-                if len(searched_datetime_array) == 0:
-                    searched_datetime_array.append(standard_time)
-                elif standard_time != searched_datetime_array[-1]:
-                    searched_datetime_array.append(standard_time)
-            print("-------------->>> Main Searched Datetime")
-            print(searched_datetime_array)
+        #     time.sleep(6)
+        #     searched_datetime_array = []
+        #     search_list = WebDriverWait(driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, search_list_xpath)))
+        #     print("-------------->>> Searched Datetime")
+        #     for row in search_list:
+        #         datetime_str = row.find_element_by_xpath("./td[9]/span").text
+        #         datetime_str = datetime_str.split('\n')[0] + ' ' + datetime_str.split('\n')[1]
+        #         standard_time = datetime.strptime(datetime_str, "%m/%d/%Y %I:%M %p %Z")
+        #         print(standard_time)
+        #         if len(searched_datetime_array) == 0:
+        #             searched_datetime_array.append(standard_time)
+        #         elif standard_time != searched_datetime_array[-1]:
+        #             searched_datetime_array.append(standard_time)
+        #     print("-------------->>> Main Searched Datetime")
+        #     print(searched_datetime_array)
             
         time.sleep(40)
         print("==================== Waiting for the next stage ===================")
