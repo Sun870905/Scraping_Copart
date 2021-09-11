@@ -35,6 +35,7 @@ def copart():
 
     email = "588291"
     password = "Parol@12"
+    sign_in_xpath = "//a[@data-uname='homePageSignIn']"
     email_field_xpath = "//div[@id='show']/div[1]/div[1]/input"
     pwd_field_xpath = "//div[@id='show']/div[2]/div[1]/input"
     remember_checkbox_xpath = "//div[@id='show']/div[3]/div[1]/input"
@@ -47,10 +48,12 @@ def copart():
     inventory_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/a"
     sales_list_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/ul/li[2]/a"
     list_xpath = "//table[@id='clientSideDataTable']/tbody/tr"
-    waiting_time_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/later-auction-row/div/div/div[3]/div/div[2]/strong"
-    join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
+    link_for_search_list_link = "//table[@id='clientSideDataTable']/tbody/tr[1]/td[6]/a"
     search_btn_xpath = "//div[@class='row vehicle-finder-search']/div/button"
     search_list_xpath = "//div[@id='serverSideDataTable_wrapper']/table/tbody/tr"
+    waiting_time_xpath = "//span[@data-uname='lotdetailSaleinformationtimeleftvalue']"
+    waiting_time_in_iframe_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/later-auction-row/div/div/div[3]/div/div[2]/strong"
+    join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
     join_now_btn_xpath = "//div[@class='button-div ng-star-inserted']/button"
     price_xpath = "//div[@class='contentscrolldiv-MACRO']"
     vin_xpath = "//a[@class='titlelbl ellipsis']"
@@ -59,38 +62,41 @@ def copart():
     auction = False
     auction_result = []
     
-    try:
-        time.sleep(10)
-        email_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, email_field_xpath)))
-        email_field.clear()
-        email_field.send_keys(email)
-    except:
-        print("-------------->>> Email field doesn't exist")
-        pass
-    print("-------------->>> Email pass")
-    
-    try:
-        time.sleep(5)
-        pwd_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, pwd_field_xpath)))
-        pwd_field.clear()
-        pwd_field.send_keys(password)
-    except:
-        print("-------------->>> Password field doesn't exist")
-        pass
-    print("-------------->>> Password pass")
-    
-    try:
-        time.sleep(6)
-        sign_in_into_account_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_into_account_btn_xpath)))
-        sign_in_into_account_btn.click()
-    except:
-        print("-------------->>> Account Login button doesn't exist")
-        pass
-    print("-------------->>> Sign in pass")
-    
-    time.sleep(20)
     while True:
         try:
+            try:
+                time.sleep(10)
+                email_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, email_field_xpath)))
+                email_field.clear()
+                email_field.send_keys(email)
+            except:
+                print("-------------->>> Email field doesn't exist")
+                pass
+            print("-------------->>> Email pass")
+            
+            try:
+                time.sleep(5)
+                pwd_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, pwd_field_xpath)))
+                pwd_field.clear()
+                pwd_field.send_keys(password)
+            except:
+                print("-------------->>> Password field doesn't exist")
+                pass
+            print("-------------->>> Password pass")
+            
+            try:
+                time.sleep(6)
+                sign_in_into_account_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_into_account_btn_xpath)))
+                sign_in_into_account_btn.click()
+            except:
+                print("-------------->>> Account Login button doesn't exist")
+                pass
+            print("-------------->>> Sign in pass")
+        except:
+            print("Can't find Sign In button")
+    
+        try:
+            time.sleep(20)
             auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, auctions_xpath)))
             auctions.click()
         except:
@@ -147,6 +153,7 @@ def copart():
                     print("-------------->>> Sales List pass")
                     
                     datetime_list = []
+                    seconds_list = []
                     try:
                         time.sleep(4)
                         print('-------------->>> Datetime list')
@@ -155,29 +162,114 @@ def copart():
                             date_str = list[idx].find_element_by_xpath('./td[6]').text
                             time_str = list[idx].find_element_by_xpath('./td[1]').text
                             datetime_str = date_str + " " + time_str
-                            print(datetime_str)
-                            if date_str != '' and (idx == 0 or (idx > 0 and datetime_list[-1] != datetime_str)):
-                                datetime_list.append(datetime_str)
+                            
+                            if date_str != '':
+                                format_date = datetime_str[0:datetime_str.index('M')+1]
+                                date_object = datetime.strptime(format_date, "%m/%d/%Y %I:%M %p")
+                                now = datetime.now()
+                                total_seconds = (date_object - now).total_seconds()
+                                print('Extract-->', datetime_str, 'Convert-->', date_object, 'Now-->', now, 'Waiting_seconds-->', total_seconds)
+                                if idx == 0 or (idx > 0 and datetime_list[-1] != date_object and total_seconds >= 0):
+                                    datetime_list.append(date_object)
+                                    seconds_list.append(total_seconds)
                     except:
-                        print("-------------->>> Can't find List")
+                        print("-------------->>> Can't find Sales List")
                         pass
-                    print('-------------->>> Main Datetime List\n', datetime_list)
+                    print('-------------->>> Main Auctions Datetime List:\n', datetime_list)
+                    print('-------------->>> Main Waiting Seconds List:\n', seconds_list)
                     
-                    time.sleep(60)
-                    break
+                    try:
+                        time.sleep(2)
+                        link_for_search_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, link_for_search_list_link)))
+                        link_for_search_list.click()
+                        print("-------------->>> Link For Search List pass")
+                        
+                        try:
+                            time.sleep(4)
+                            search_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, search_btn_xpath)))
+                            search_btn.click()
+                            print("-------------->>> Search Button pass")
+                            
+                            try:
+                                time.sleep(5)
+                                index = -1
+                                print('-------------->>> Sale Date:')
+                                for idx in range(20):
+                                    sale_date = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, f"{search_list_xpath}[{(idx+1)}]/td[9]/span"))).text
+                                    sale_date = sale_date.split('\n')[0]+" "+sale_date.split('\n')[1]
+                                    print(sale_date)
+                                    
+                                    sale_date = sale_date[:sale_date.index('m')+1]
+                                    convert_sale_date = datetime.strptime(sale_date, "%m/%d/%Y %I:%M %p")
+                                    now = datetime.now()
+                                    total_seconds = (convert_sale_date - now).total_seconds()
+                                    if total_seconds >= 0:
+                                        print('total seconds---->', total_seconds)
+                                        index = idx
+                                        break
+                                print("-------------->>> Search Sales List pass")
+                                if index != -1:
+                                    try:
+                                        time.sleep(4)
+                                        bid_now_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, search_list_xpath+f"[{(index+1)}]/td[14]/ul/li/ul/li[2]/a")))
+                                        bid_now_btn.click()
+                                        print("-------------->>> Bid Now Button pass")
+                                        try:
+                                            time.sleep(5)
+                                            waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_xpath))).text
+                                            print(f'-------------->>> Time Left: {waiting_time}')
+                                            sleeping_time = 0
+                                            if waiting_time.index('D') != -1:
+                                                day = re.findall(r'\d+', waiting_time[:waiting_time.index('D')])[-1]
+                                                sleeping_time = int(day)*24*3600
+                                            if waiting_time.index('H') != -1:
+                                                hour = re.findall(r'\d+', waiting_time[:waiting_time.index('H')])[-1]
+                                                sleeping_time += int(hour)*3600
+                                            if waiting_time.index('min') != -1:
+                                                min = re.findall(r'\d+', waiting_time[:waiting_time.index('min')])[-1]
+                                                sleeping_time += int(min)*60
+                                            print(f"-------------->>> Auction hasn't started yet. Sleeping for {sleeping_time}seconds")
+                                            time.sleep(sleeping_time)
+                                            continue
+                                        except Exception as e:
+                                            print(e)
+                                            print("-------------->>> Can't find Time Left")
+                                            pass
+                                    except:
+                                        print("-------------->>> Can't find Bid Now Button")
+                                        pass
+                            except:
+                                print("-------------->>> Can't find Search List")
+                                pass
+                        except:
+                            print("-------------->>> Can't find Search Button")
+                            pass
+                    except:
+                        print("-------------->>> Can't find Link For Search List")
+                        pass
                 else:
                     print("-------------->>> 'No Upcoming Auctions' doesn't exist")
                     try:
-                        waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_xpath))).text
-                        nums = [int(s) for s in re.findall(r'\b\d+\b', waiting_time)]
-                        seconds = nums[0] * 3600 + nums[1] * 60
-                        print(f"-------------->>> Auction hasn't started yet. Sleeping for {seconds}seconds")
-                        time.sleep(seconds)
+                        waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_in_iframe_xpath))).text
+                        print(f'Waiting time------> {waiting_time}')
+                        sleeping_time = 0
+                        if waiting_time.index('d') != -1:
+                            day = re.findall(r'\d+', waiting_time[:waiting_time.index('d')])[-1]
+                            sleeping_time = int(day)*24*3600
+                        if waiting_time.index('h') != -1:
+                            hour = re.findall(r'\d+', waiting_time[:waiting_time.index('h')])[-1]
+                            sleeping_time += int(hour)*3600
+                        if waiting_time.index('m') != -1:
+                            min = re.findall(r'\d+', waiting_time[:waiting_time.index('m')])[-1]
+                            sleeping_time += int(min)*60
+                        print(f"-------------->>> Auction hasn't started yet. Sleeping for {sleeping_time}seconds")
+                        time.sleep(sleeping_time)
+                        continue
                     except:
                         print("-------------->>> Can't find waiting time text")
-                        pass                
+                        pass    
         except:
-            print("-------------->>> Can't find join bid text")
+            print("-------------->>> Can't find 'No Live Auctions' text")
             pass
 
         try:
