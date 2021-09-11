@@ -39,13 +39,14 @@ def copart():
     pwd_field_xpath = "//div[@id='show']/div[2]/div[1]/input"
     remember_checkbox_xpath = "//div[@id='show']/div[3]/div[1]/input"
     sign_in_into_account_btn_xpath = "//div[@id='show']/div[4]/button"
-    inventory_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/a"
-    sales_list_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/ul/li[2]/a"
     auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/a"
     join_auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/ul/li[3]/a"
     join_bid_iframe_xpath = "//iframe[@id='iAuction5']"
     no_live_auctions_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]"
     no_upcoming_auctions_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/div"
+    inventory_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/a"
+    sales_list_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[4]/ul/li[2]/a"
+    list_xpath = "//table[@id='clientSideDataTable']/tbody/tr"
     waiting_time_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/later-auction-row/div/div/div[3]/div/div[2]/strong"
     join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
     search_btn_xpath = "//div[@class='row vehicle-finder-search']/div/button"
@@ -121,11 +122,49 @@ def copart():
                 try:
                     no_upcoming_auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, no_upcoming_auctions_xpath))).text
                 except:
+                    print("Can't find 'No Upcoming Actions' Text")
                     pass
+                
                 if "No Upcoming Auctions" in no_upcoming_auctions:
                     print("-------------->>> 'No Upcoming Auctions' exists")
-                                
+                    driver.switch_to.default_content()
+                    try:
+                        time.sleep(3)
+                        inventory = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, inventory_xpath)))
+                        inventory.click()
+                    except:
+                        print("-------------->>> Inventory isn't selected")
+                        pass
+                    print("-------------->>> Inventory pass")
                     
+                    try:
+                        time.sleep(2)
+                        sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sales_list_xpath)))
+                        sales_list.click()
+                    except:
+                        print("-------------->>> Sales List isn't selected")
+                        pass
+                    print("-------------->>> Sales List pass")
+                    
+                    datetime_list = []
+                    try:
+                        time.sleep(4)
+                        print('-------------->>> Datetime list')
+                        list = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, list_xpath)))
+                        for idx in range(len(list)):
+                            date_str = list[idx].find_element_by_xpath('./td[6]').text
+                            time_str = list[idx].find_element_by_xpath('./td[1]').text
+                            datetime_str = date_str + " " + time_str
+                            print(datetime_str)
+                            if date_str != '' and (idx == 0 or (idx > 0 and datetime_list[-1] != datetime_str)):
+                                datetime_list.append(datetime_str)
+                    except:
+                        print("-------------->>> Can't find List")
+                        pass
+                    print('-------------->>> Main Datetime List\n', datetime_list)
+                    
+                    time.sleep(60)
+                    break
                 else:
                     print("-------------->>> 'No Upcoming Auctions' doesn't exist")
                     try:
