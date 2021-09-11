@@ -44,9 +44,10 @@ def copart():
     auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/a"
     join_auctions_xpath = "//header[@id='top']/div[2]/div/div/nav/div/ul/li[5]/ul/li[3]/a"
     join_bid_iframe_xpath = "//iframe[@id='iAuction5']"
-    join_bid_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]"
-    join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
+    no_live_auctions_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]"
+    no_upcoming_auctions_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/div"
     waiting_time_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/td/later-auction-row/div/div/div[3]/div/div[2]/strong"
+    join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
     search_btn_xpath = "//div[@class='row vehicle-finder-search']/div/button"
     search_list_xpath = "//div[@id='serverSideDataTable_wrapper']/table/tbody/tr"
     join_now_btn_xpath = "//div[@class='button-div ng-star-inserted']/button"
@@ -64,6 +65,7 @@ def copart():
         email_field.send_keys(email)
     except:
         print("-------------->>> Email field doesn't exist")
+        pass
     print("-------------->>> Email pass")
     
     try:
@@ -73,6 +75,7 @@ def copart():
         pwd_field.send_keys(password)
     except:
         print("-------------->>> Password field doesn't exist")
+        pass
     print("-------------->>> Password pass")
     
     try:
@@ -81,6 +84,7 @@ def copart():
         sign_in_into_account_btn.click()
     except:
         print("-------------->>> Account Login button doesn't exist")
+        pass
     print("-------------->>> Sign in pass")
     
     time.sleep(20)
@@ -111,17 +115,28 @@ def copart():
         
         try:
             time.sleep(15)
-            join_bid = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_xpath))).text
-            if "No Live Auctions" in join_bid:
+            no_live_auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, no_live_auctions_xpath))).text
+            if "No Live Auctions" in no_live_auctions:
+                no_upcoming_auctions = ''
                 try:
-                    waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_xpath))).text
-                    nums = [int(s) for s in re.findall(r'\b\d+\b', waiting_time)]
-                    seconds = nums[0] * 3600 + nums[1] * 60
-                    print(f"-------------->>> Auction hasn't started yet. Sleeping for {seconds}seconds")
-                    time.sleep(seconds)
+                    no_upcoming_auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, no_upcoming_auctions_xpath))).text
                 except:
-                    print("-------------->>> Can't find waiting time text")
                     pass
+                if "No Upcoming Auctions" in no_upcoming_auctions:
+                    print("-------------->>> 'No Upcoming Auctions' exists")
+                                
+                    
+                else:
+                    print("-------------->>> 'No Upcoming Auctions' doesn't exist")
+                    try:
+                        waiting_time = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, waiting_time_xpath))).text
+                        nums = [int(s) for s in re.findall(r'\b\d+\b', waiting_time)]
+                        seconds = nums[0] * 3600 + nums[1] * 60
+                        print(f"-------------->>> Auction hasn't started yet. Sleeping for {seconds}seconds")
+                        time.sleep(seconds)
+                    except:
+                        print("-------------->>> Can't find waiting time text")
+                        pass                
         except:
             print("-------------->>> Can't find join bid text")
             pass
@@ -150,7 +165,7 @@ def copart():
             try:
                 print('svg start')
                 price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'svg')))
-                price_txt = (price[idx].text for idx in range(len(price)))
+                price_txt = [price[idx].text for idx in range(len(price))]
                 print('svg ok')
                 print(len(price))
                 print(price_txt)
@@ -159,7 +174,7 @@ def copart():
                 try:
                     print('Div start instead of svg')
                     price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, price_xpath)))
-                    price_txt = (price[idx].text for idx in range(len(price)))
+                    price_txt = [price[idx].text for idx in range(len(price))]
                     print('Div ok instead of svg')
                     print(len(price))
                     print(price_txt)
@@ -174,7 +189,7 @@ def copart():
             try:
                 print('vin start')
                 vin = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, vin_xpath)))
-                vin_txt = (vin[idx].text for idx in range(len(vin)))
+                vin_txt = [vin[idx].text for idx in range(len(vin))]
                 print('vin ok')
                 print(len(vin))
                 print(vin_txt)
