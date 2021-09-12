@@ -18,7 +18,7 @@ import re
 # df = pd.DataFrame(columns=columns_names)
 def copart():
     draw_banner()
-    
+    0000
     options = uc.ChromeOptions()
 
     # setting profile
@@ -31,11 +31,11 @@ def copart():
     options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
 
     driver = uc.Chrome(options=options)
-    driver.get("https://www.copart.com/login/")
-
+    
     email = "588291"
     password = "Parol@12"
-    sign_in_xpath = "//a[@data-uname='homePageSignIn']"
+    sign_in_btn_xpath = "//a[@data-uname='homePageSignIn']"
+    logged_in_user_icon = "//span[@class='ml-5 loggedInUserIcon']"
     email_field_xpath = "//div[@id='show']/div[1]/div[1]/input"
     pwd_field_xpath = "//div[@id='show']/div[2]/div[1]/input"
     remember_checkbox_xpath = "//div[@id='show']/div[3]/div[1]/input"
@@ -63,62 +63,69 @@ def copart():
     auction_result = []
     
     while True:
+        driver.get("https://www.copart.com/login/")
         try:
-            try:
-                time.sleep(10)
-                email_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, email_field_xpath)))
-                email_field.clear()
-                email_field.send_keys(email)
-            except:
-                print("-------------->>> Email field doesn't exist")
-                pass
-            print("-------------->>> Email pass")
-            
-            try:
-                time.sleep(5)
-                pwd_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, pwd_field_xpath)))
-                pwd_field.clear()
-                pwd_field.send_keys(password)
-            except:
-                print("-------------->>> Password field doesn't exist")
-                pass
-            print("-------------->>> Password pass")
-            
-            try:
-                time.sleep(6)
-                sign_in_into_account_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_into_account_btn_xpath)))
-                sign_in_into_account_btn.click()
-            except:
-                print("-------------->>> Account Login button doesn't exist")
-                pass
-            print("-------------->>> Sign in pass")
+            time.sleep(2)
+            print('-------------->>> Start :)')
+            sign_in_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_btn_xpath)))
+            if "Sign In" in sign_in_btn.text:
+                try:
+                    time.sleep(10)
+                    email_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, email_field_xpath)))
+                    email_field.clear()
+                    email_field.send_keys(email)
+                    print("-------------->>> Email pass")
+                except:
+                    print("-------------->>> Email field doesn't exist")
+                    pass
+                
+                try:
+                    time.sleep(5)
+                    pwd_field = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, pwd_field_xpath)))
+                    pwd_field.clear()
+                    pwd_field.send_keys(password)
+                    print("-------------->>> Password pass")
+                except:
+                    print("-------------->>> Password field doesn't exist")
+                    pass
+                
+                try:
+                    time.sleep(6)
+                    sign_in_into_account_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_into_account_btn_xpath)))
+                    sign_in_into_account_btn.click()
+                    print("-------------->>> Sign in pass")
+                except:
+                    print("-------------->>> Account Login button doesn't exist")
+                    pass
         except:
-            print("Can't find Sign In button")
+            print("-------------->>> Can't find Sign In button")
+            pass
     
         try:
             time.sleep(20)
             auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, auctions_xpath)))
             auctions.click()
+            print("-------------->>> Auctions pass")
         except:
+            print("-------------->>> Can't find Auctions")
             pass
-        print("-------------->>> Auctions pass")
         
         try:
             time.sleep(4)
             join_auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_auctions_xpath)))
             join_auctions.click()
+            print("-------------->>> Join Auctions pass")
         except:
             print("-------------->>> Join Auctions Option isn't selected")
             pass
-        print("-------------->>> Join Auctions pass")
         
         try:
             join_bid_iframe = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_iframe_xpath)))
             driver.switch_to.frame(join_bid_iframe)
+            print("-------------->>> iframe pass")
         except:
             print("-------------->>> Can't find iframe for join bid")
             pass
-        print("-------------->>> iframe pass")
         
         try:
             time.sleep(15)
@@ -128,7 +135,7 @@ def copart():
                 try:
                     no_upcoming_auctions = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, no_upcoming_auctions_xpath))).text
                 except:
-                    print("Can't find 'No Upcoming Actions' Text")
+                    print("-------------->>> Can't find 'No Upcoming Actions' Text")
                     pass
                 
                 if "No Upcoming Auctions" in no_upcoming_auctions:
@@ -138,19 +145,19 @@ def copart():
                         time.sleep(3)
                         inventory = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, inventory_xpath)))
                         inventory.click()
+                        print("-------------->>> Inventory pass")
                     except:
-                        print("-------------->>> Inventory isn't selected")
+                        print("-------------->>> Can't find Inventory")
                         pass
-                    print("-------------->>> Inventory pass")
                     
                     try:
                         time.sleep(2)
                         sales_list = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sales_list_xpath)))
                         sales_list.click()
+                        print("-------------->>> Sales List pass")
                     except:
-                        print("-------------->>> Sales List isn't selected")
+                        print("-------------->>> Can't find Sales List")
                         pass
-                    print("-------------->>> Sales List pass")
                     
                     datetime_list = []
                     seconds_list = []
@@ -231,8 +238,7 @@ def copart():
                                             print(f"-------------->>> Auction hasn't started yet. Sleeping for {sleeping_time}seconds")
                                             time.sleep(sleeping_time)
                                             continue
-                                        except Exception as e:
-                                            print(e)
+                                        except:
                                             print("-------------->>> Can't find Time Left")
                                             pass
                                     except:
@@ -264,7 +270,14 @@ def copart():
                             sleeping_time += int(min)*60
                         print(f"-------------->>> Auction hasn't started yet. Sleeping for {sleeping_time}seconds")
                         time.sleep(sleeping_time)
-                        continue
+                        try:
+                            time.sleep(2)
+                            sign_in_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, sign_in_btn_xpath)))
+                            if "Sign In" in sign_in_btn.text:
+                                continue
+                        except:
+                            print("Can't find Sign In button")
+                            pass
                     except:
                         print("-------------->>> Can't find waiting time text")
                         pass    
@@ -276,20 +289,21 @@ def copart():
             time.sleep(3)
             join_bid_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_btn_xpath)))
             driver.execute_script("arguments[0].click();", join_bid_btn)
+            print("-------------->>> Join Bid Button pass")
         except NoSuchElementException:
             print("-------------->>> Join bid button doesn't exist")
             pass
-        print("-------------->>> Join Bid Button pass")
         
         try:
             time.sleep(2)
             join_now_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_now_btn_xpath)))
             driver.execute_script("arguments[0].click();", join_now_btn)
+            print("-------------->>> Join now button pass")
         except NoSuchElementException:
             print("-------------->>> Join now button doesn't exist")
             pass
-        print("-------------->>> Join now button pass")
-
+        
+        ##################################### Auctions Start ##########################################################
         data = ''
         vin_change = []
         while 1:
