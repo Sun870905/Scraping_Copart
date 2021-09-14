@@ -1,12 +1,7 @@
-from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.keys import Keys
 import undetected_chromedriver.v2 as uc
-from random import randint
 from os.path import exists
 from colorama import Fore
 from datetime import datetime
@@ -14,7 +9,7 @@ import pandas as pd
 import time
 import re
 
-columns_names=['Lot', 'Final Bid']
+columns_names=['Title', 'Lot', 'Final Bid', 'Location', 'Doc Type', 'Odometer', 'Primary Damage', 'Secondary Damage', 'Highlights', 'VIN', 'Body Style', 'Color', 'Engine Type', 'Cylinders', 'Drive', 'Fuel', 'Keys']
 df = pd.DataFrame(columns=columns_names)
 
 options = uc.ChromeOptions()
@@ -51,6 +46,25 @@ join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
 join_now_btn_xpath = "//div[@class='button-div ng-star-inserted']/button"
 price_xpath = "//div[@class='contentscrolldiv-MACRO']"
 lot_xpath = "//a[@class='titlelbl ellipsis']"
+
+vehicle_title_xpath = "//div[@class='titlelbl  ellipsis']"
+middle_xpath = "./perfect-scrollbar/div/div[1]/div"
+location_xpath = "/div[1]/div/div[1]"
+doc_type_xpath = "/div[2]/div/div[1]"
+odometer_xpath = "/div[3]/div/div[1]"
+primary_damage_xpath = "/div[6]/div/div[1]"
+secondary_damage_xpath = "/div[7]/div/div[1]"
+
+hightlights_xpath = "/div[1]/div/div[1]"
+vin_xpath = "/div[2]/div/span/a"
+body_style_xpath = "/div[3]/div/div[1]"
+color_xpath = "/div[4]/div/div[1]"
+engine_type_xpath = "/div[5]/div/div[1]"
+cylinders_xpath = "/div[6]/div/div[1]"
+drive_xpath = "/div[7]/div/div[1]"
+fuel_xpath = "/div[8]/div/div[1]"
+keys_xpath = "/div[9]/div/div[1]"
+
 auction_ended_xpath = '/html/body/div[2]/root/app-root/div/widget-area/div[2]/div[3]/div/gridster/gridster-item/widget/div/div/div/div[1]'
 
 def copart():
@@ -325,7 +339,7 @@ def auctions_record():
         lot_change = []
         try:
             # print('-------------->>> lot')
-            lot = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, lot_xpath)))
+            lot = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, lot_xpath)))
             lot_change = [lot[idx].text for idx in range(len(lot))]
         except:
             print("Can't find lot")
@@ -334,19 +348,19 @@ def auctions_record():
         price_change = []
         try:
             # print('-------------->>> svg')
-            price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'svg')))
+            price = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'svg')))
             price_change = [price[idx].text for idx in range(len(price))]
         except:
             print("-------------->>> Can't find svg")
             try:
                 # print('-------------->>> div')
-                price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, price_xpath)))
+                price = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, price_xpath)))
                 price_change = [price[idx].text for idx in range(len(price))]
             except:
                 print("-------------->>> Can't find price description")
                 pass
             pass
-
+        
         if lot_change == [] or price_change == []: break
         if len(lot_list) < len(lot_change) and len(lot_change) == len(price_change):
             for idx in range(len(lot_list), len(lot_change)):
@@ -360,7 +374,7 @@ def auctions_record():
             if price_change[idx].find('$') != -1:
                lot_list[idx] = lot_change[idx]
                price_list[idx] = price_change[idx]
-            elif price_change[idx].find('Sold') != -1 and lot_list[idx] not in final_lot_list:
+            elif price_change[idx].find('Sold') != -1 and lot_list[idx] not in final_lot_list and price_list[idx].find('$') != -1:
                 final_lot_list.append(lot_list[idx])
                 if price_list[idx].find(',') == -1:
                     final_bid = re.findall(r'\d+', price_list[idx])[0]
@@ -372,6 +386,55 @@ def auctions_record():
                 
                 df.at[len(df.index) + 1, 'Lot'] = lot_list[idx]
                 df.at[len(df.index), 'Final Bid'] = final_bid
+                
+                try:
+                    vehicle_title = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, vehicle_title_xpath)))
+                    df.at[len(df.index), 'Title'] = vehicle_title[idx].text
+                except:
+                    print("-------------->>> Can't find Vehicle Title")
+                    pass
+                
+                try:
+                    secondary = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'lot-details-secondary-refactored')))
+                    location = secondary[idx].find_element_by_xpath(middle_xpath + location_xpath)
+                    df.at[len(df.index), 'Location'] = location.text
+                    doc_type = secondary[idx].find_element_by_xpath(middle_xpath + doc_type_xpath)
+                    df.at[len(df.index), 'Doc Type'] = doc_type.text
+                    odometer = secondary[idx].find_element_by_xpath(middle_xpath + odometer_xpath)
+                    df.at[len(df.index), 'Odometer'] = odometer.text
+                    primary_damage = secondary[idx].find_element_by_xpath(middle_xpath + primary_damage_xpath)
+                    df.at[len(df.index), 'Primary Damage'] = primary_damage.text
+                    secondary_damage = secondary[idx].find_element_by_xpath(middle_xpath + secondary_damage_xpath)
+                    df.at[len(df.index), 'Secondary Damage'] = secondary_damage.text
+                except:
+                    print("-------------->>> Can't find Lot Details Secondary Refactored")
+                    pass
+                
+                try:
+                    primary= WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'lot-details-primary-refactored')))
+                    hightlights = primary[idx].find_element_by_xpath(middle_xpath + hightlights_xpath)
+                    df.at[len(df.index), 'Highlights'] = hightlights.text
+                    vin = primary[idx].find_element_by_xpath(middle_xpath + vin_xpath)
+                    vin.click()
+                    df.at[len(df.index), 'VIN'] = vin.text
+                    body_style = primary[idx].find_element_by_xpath(middle_xpath + body_style_xpath)
+                    df.at[len(df.index), 'Body Style'] = body_style.text
+                    color = primary[idx].find_element_by_xpath(middle_xpath + color_xpath)
+                    df.at[len(df.index), 'Color'] = color.text
+                    engine_type = primary[idx].find_element_by_xpath(middle_xpath + engine_type_xpath)
+                    df.at[len(df.index), 'Engine Type'] = engine_type.text
+                    cylinders = primary[idx].find_element_by_xpath(middle_xpath + cylinders_xpath)
+                    df.at[len(df.index), 'Cylinders'] = cylinders.text
+                    drive = primary[idx].find_element_by_xpath(middle_xpath + drive_xpath)
+                    df.at[len(df.index), 'Drive'] = drive.text
+                    fuel = primary[idx].find_element_by_xpath(middle_xpath + fuel_xpath)
+                    df.at[len(df.index), 'Fuel'] = fuel.text
+                    keys = primary[idx].find_element_by_xpath(middle_xpath + keys_xpath)
+                    df.at[len(df.index), 'Keys'] = keys.text
+                except:
+                    print("-------------->>> Can't find Lot Details Primary Refactored")
+                    pass
+                
                 df.to_csv(title, index = False)
         
     print('-------------->>> The auction is over.')
