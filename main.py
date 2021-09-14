@@ -14,8 +14,9 @@ import pandas as pd
 import time
 import re
 
-# columns_names=['Brand Name', 'Product Name', 'Category', 'VPN', 'UPC', 'Price', 'Qty', 'Description', 'Specification', 'Video URL', 'Image URL', 'Related Product URL']
-# df = pd.DataFrame(columns=columns_names)
+columns_names=['Lot', 'Final Bid']
+df = pd.DataFrame(columns=columns_names)
+
 options = uc.ChromeOptions()
 # setting profile
 options.user_data_dir = "C:\\Users\\Sun\\AppData\\Local\\Google\\Chrome\\User Data"
@@ -23,6 +24,7 @@ options.user_data_dir = "C:\\Users\\Sun\\AppData\\Local\\Google\\Chrome\\User Da
 options.add_argument('--user-data-dir=c:\\temp\\profile2')
 # just some options passing in to skip annoying popups
 options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
+options.add_argument('--start-maximized')
 driver = uc.Chrome(options=options)
 
 email = "588291"
@@ -48,10 +50,8 @@ waiting_time_in_iframe_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[4]/
 join_bid_btn_xpath = "//table[@class='arAuctiontable']/tbody[2]/tr[2]//button"
 join_now_btn_xpath = "//div[@class='button-div ng-star-inserted']/button"
 price_xpath = "//div[@class='contentscrolldiv-MACRO']"
-vin_xpath = "//a[@class='titlelbl ellipsis']"
+lot_xpath = "//a[@class='titlelbl ellipsis']"
 auction_ended_xpath = '/html/body/div[2]/root/app-root/div/widget-area/div[2]/div[3]/div/gridster/gridster-item/widget/div/div/div/div[1]'
-
-auction_result = []
 
 def copart():
     while True:
@@ -98,13 +98,11 @@ def copart():
                     print("-------------->>> Can't find 'No Upcoming Actions' Text")
                     pass
                 
-                if "No Upcoming Auctions" in no_upcoming_auctions:
-                    no_upcoming()
-                    continue
-                else:
+                if "No Upcoming Auctions" not in no_upcoming_auctions:
                     upcoming()
-                    if sign_in_check():
-                        continue
+                else:
+                    no_upcoming()
+                continue
         except:
             print("-------------->>> Can't find 'No Live Auctions' text")
             pass
@@ -114,20 +112,21 @@ def copart():
             join_bid_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_bid_btn_xpath)))
             driver.execute_script("arguments[0].click();", join_bid_btn)
             print("-------------->>> Join Bid Button pass")
-        except NoSuchElementException:
+        except:
             print("-------------->>> Join bid button doesn't exist")
             pass
         
         try:
             time.sleep(2)
-            join_now_btn = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, join_now_btn_xpath)))
+            join_now_btn = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, join_now_btn_xpath)))
             driver.execute_script("arguments[0].click();", join_now_btn)
             print("-------------->>> Join now button pass")
-        except NoSuchElementException:
+        except:
             print("-------------->>> Join now button doesn't exist")
             pass
         
         auctions_record()
+        
         end = False
         if end: break
     print('-------------->>> Closing <<<--------------')
@@ -310,55 +309,71 @@ def sleeping(str):
         pass
 
 def auctions_record():
-    vin_list = []
+    time.sleep(5)
+    
+    final_lot_list = []
+    final_price_list = []
+    lot_list = []
     price_list = []
-    count = 0
+
+    global df
+    title = 'Final Bid Info.csv'
+    if exists(title):
+        df = pd.read_csv(title)
+    
     while True:
-        price_change = []
+        lot_change = []
         try:
-            print('-------------->>> svg')
-            price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'svg')))
-            price_change = [price[idx].text for idx in range(len(price))]
-            print(price_change)
-        except NoSuchElementException:
-            print("-------------->>> Can't find svg")
-            try:
-                print('-------------->>> div')
-                price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, price_xpath)))
-                price_change = [price[idx].text for idx in range(len(price))]
-                print(price_change)
-            except:
-                print("-------------->>> Can't price description")
-                pass
-        except Exception as e:
-            print(e)
-            pass
-        
-        vin_change = []
-        try:
-            print('-------------->>> vin')
-            vin = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, vin_xpath)))
-            vin_change = [vin[idx].text for idx in range(len(vin))]
-            print(vin_change)
-        except NoSuchElementException:
-            print("Can't find vin")
+            # print('-------------->>> lot')
+            lot = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, lot_xpath)))
+            lot_change = [lot[idx].text for idx in range(len(lot))]
+        except:
+            print("Can't find lot")
             pass
 
-        for idx, vin_value in enumerate(vin_change):
-            if vin_list[idx] == []:
-                vin_list = vin_change
-                price_list = price_change
-                break
-            elif vin_list[idx] == vin_value:
-                price_list[idx] = price_change[idx]
-            elif vin_list[idx] != vin_value:
-                auction_result.append({'vin': vin_list[idx], 'price': price_list[idx]})
-                vin_list[idx] = vin_change[idx]
-                price_list[idx] = price_change[idx]
-        print('-------------->>> ', auction_result)
-        count += 1
-        if count == 100: break
-        if vin_change == []: break
+        price_change = []
+        try:
+            # print('-------------->>> svg')
+            price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'svg')))
+            price_change = [price[idx].text for idx in range(len(price))]
+        except:
+            print("-------------->>> Can't find svg")
+            try:
+                # print('-------------->>> div')
+                price = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located((By.XPATH, price_xpath)))
+                price_change = [price[idx].text for idx in range(len(price))]
+            except:
+                print("-------------->>> Can't find price description")
+                pass
+            pass
+
+        if lot_change == [] or price_change == []: break
+        if len(lot_list) < len(lot_change) and len(lot_change) == len(price_change):
+            for idx in range(len(lot_list), len(lot_change)):
+                lot_list.append(lot_change[idx])
+                if price_change[idx].find('$') != -1:
+                    price_list.append(price_change[idx])
+                else:
+                    price_list.append('')
+                
+        for idx in range(len(lot_list)):
+            if price_change[idx].find('$') != -1:
+               lot_list[idx] = lot_change[idx]
+               price_list[idx] = price_change[idx]
+            elif price_change[idx].find('Sold') != -1 and lot_list[idx] not in final_lot_list:
+                final_lot_list.append(lot_list[idx])
+                if price_list[idx].find(',') == -1:
+                    final_bid = re.findall(r'\d+', price_list[idx])[0]
+                else:
+                    final_bid = re.findall(r'\d+', price_list[idx].replace(',', ''))[0]
+                final_price_list.append(final_bid)
+                print('-------------->>> Fianl Lot:', final_lot_list)
+                print('-------------->>> Final Bid:', final_price_list)
+                
+                df.at[len(df.index) + 1, 'Lot'] = lot_list[idx]
+                df.at[len(df.index), 'Final Bid'] = final_bid
+                df.to_csv(title, index = False)
+        
     print('-------------->>> The auction is over.')
 
 def draw_banner():
